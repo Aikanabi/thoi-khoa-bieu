@@ -87,7 +87,7 @@ const show={h:true,y:true};let mon=monday(new Date());
 const T0=6*60,PX=0.8; // 48px / giờ
 const DOW=["Thứ 2","Thứ 3","Thứ 4","Thứ 5","Thứ 6","Thứ 7","Chủ nhật"];
 const $=id=>document.getElementById(id);
-let GRP="";try{GRP=localStorage.getItem("grp")||""}catch(e){}
+let GRP="2";try{const s=localStorage.getItem("grp");if(s!==null)GRP=s}catch(e){}
 const vis=e=>show[e.w=="v"?"h":e.w]&&(e.w!="y"||!e.g||!GRP||e.g==GRP);
 function lanes(list){list.sort((a,b)=>a.s-b.s||a.e-b.e);let out=[],cl=[],end=0;
  const flush=()=>{const n=Math.max(...cl.map(x=>x.l))+1;cl.forEach(x=>{x.n=n});out.push(...cl);cl=[]};
