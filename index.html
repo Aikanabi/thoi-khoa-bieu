@@ -29,6 +29,8 @@ button:focus-visible{outline:2px solid var(--h);outline-offset:2px}
 .pill i{width:12px;height:12px;border-radius:50%;display:inline-block}
 .pill[aria-pressed="false"]{opacity:.45}
 .pill[aria-pressed="false"] i{background:transparent!important;border:2px solid var(--mute)}
+#tip{position:fixed;z-index:20;display:none;pointer-events:none;max-width:270px;background:var(--ink);color:var(--bg);border-radius:8px;padding:8px 10px;font-size:12px;line-height:1.5;box-shadow:0 4px 16px rgba(0,0,0,.25)}#tip b{display:block;font-size:13px;margin-bottom:2px}#tip span{display:block}
+select{font:inherit;color:inherit;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:7px 10px}
 #label{font-weight:600;min-width:210px;text-align:center}
 .cal{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow-x:auto}
 .grid{display:grid;grid-template-columns:52px repeat(7,minmax(118px,1fr));min-width:880px}
@@ -58,6 +60,7 @@ background:repeating-linear-gradient(to bottom,transparent 0,transparent 47px,va
  <div class="who">
   <button class="pill" id="th" aria-pressed="true"><i style="background:var(--h)"></i>Hưng</button>
   <button class="pill" id="ty" aria-pressed="true"><i style="background:var(--y)"></i>Vy</button>
+  <select id="grp" aria-label="Nhóm thực hành của Vy"><option value="">Vy: mọi nhóm thực hành</option><option value="1">Vy: nhóm 1</option><option value="2">Vy: nhóm 2</option><option value="3">Vy: nhóm 3</option></select>
  </div>
 </header>
 <header>
@@ -76,7 +79,7 @@ const m=t=>{const[a,b]=t.split(":");return +a*60+ +b};
 const hm=n=>String(Math.floor(n/60)).padStart(2,"0")+":"+String(n%60).padStart(2,"0");
 const E=[];
 DATA.ev.forEach(([w,d,s,e,t,r,x])=>E.push({w:w=="h"&&/Session/.test(t)?"v":w,d,s:m(s),e:m(e),t,r,x}));
-DATA.vy.forEach(([d,p1,p2,t,k,g,gv,r])=>E.push({w:"y",d,s:m(IUH[p1]),e:m(IUH[p2])+45,t,r,x:[k,g&&"nhóm "+g,gv&&"GV "+gv,"tiết "+p1+"–"+p2].filter(Boolean).join(" · ")}));
+DATA.vy.forEach(([d,p1,p2,t,k,g,gv,r])=>E.push({w:"y",g:k=="Thực hành"?g:"",d,s:m(IUH[p1]),e:m(IUH[p2])+45,t,r,x:[k,g&&"nhóm "+g,gv&&"GV "+gv,"tiết "+p1+"–"+p2].filter(Boolean).join(" · ")}));
 const NAME={h:"Hưng · Bách khoa",v:"Hưng · VUS",y:"Vy · IUH"};
 const iso=d=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
 const monday=d=>{const x=new Date(d.getFullYear(),d.getMonth(),d.getDate());x.setDate(x.getDate()-((x.getDay()+6)%7));return x};
@@ -84,7 +87,8 @@ const show={h:true,y:true};let mon=monday(new Date());
 const T0=6*60,PX=0.8; // 48px / giờ
 const DOW=["Thứ 2","Thứ 3","Thứ 4","Thứ 5","Thứ 6","Thứ 7","Chủ nhật"];
 const $=id=>document.getElementById(id);
-const vis=e=>show[e.w=="v"?"h":e.w];
+let GRP="";try{GRP=localStorage.getItem("grp")||""}catch(e){}
+const vis=e=>show[e.w=="v"?"h":e.w]&&(e.w!="y"||!e.g||!GRP||e.g==GRP);
 function lanes(list){list.sort((a,b)=>a.s-b.s||a.e-b.e);let out=[],cl=[],end=0;
  const flush=()=>{const n=Math.max(...cl.map(x=>x.l))+1;cl.forEach(x=>{x.n=n});out.push(...cl);cl=[]};
  for(const e of list){if(cl.length&&e.s>=end)flush();const used=cl.filter(x=>x.e>e.s).map(x=>x.l);let l=0;while(used.includes(l))l++;e.l=l;cl.push(e);end=cl.length==1?e.e:Math.max(end,e.e)}
@@ -100,12 +104,20 @@ function render(){
  days.forEach(d=>{const l=lanes(E.filter(e=>e.d==iso(d)&&vis(e)).map(e=>({...e})));any+=l.length;
   html+=`<div class="col${iso(d)==td?" today":""}">`+l.map(e=>{
    const top=(e.s-T0)*PX,h=Math.max((e.e-e.s)*PX-2,22),w=100/e.n;
-   return `<button class="ev ${e.w}" style="top:${top}px;height:${h}px;left:calc(${e.l*w}% + 2px);width:calc(${w}% - 4px)" data-i="${E.indexOf(E.find(x=>x.d==e.d&&x.s==e.s&&x.t==e.t&&x.w==e.w))}"><b>${e.t}</b><small>${hm(e.s)}–${hm(e.e)}${e.r?" · "+e.r:""}</small></button>`}).join("")+"</div>"});
+   return `<button class="ev ${e.w}" style="top:${top}px;height:${h}px;left:calc(${e.l*w}% + 2px);width:calc(${w}% - 4px)" data-i="${E.indexOf(E.find(x=>x.d==e.d&&x.s==e.s&&x.t==e.t&&x.w==e.w))}"><b>${e.t}${e.g?" · N"+e.g:""}</b><small>${hm(e.s)}–${hm(e.e)}${e.r?" · "+e.r:""}</small></button>`}).join("")+"</div>"});
  $("grid").innerHTML=html;
  if(!any)$("detail").innerHTML='<div class="empty">Tuần này không có lịch cho người đang chọn.</div>';
 }
+const esc=s=>String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;");
+function info(e){const o={},r=e.r||"";
+ if(e.w=="y"){const m=r.match(/^([^\s(]+)\s*(?:\((.*)\))?/);if(m){o.room=m[1];if(m[2])o.unit=m[2];const b=m[1].match(/^[A-Za-z]+\d+/);if(b)o.b=b[0]}}
+ else if(e.w=="h"&&r.includes("-")){o.room=r;o.b=r.slice(0,r.indexOf("-"));o.c="BK-CS1"}
+ else if(e.w=="v"&&r.includes(" - ")){const p=r.split(" - ");o.room=p[0];o.c=p[1]}
+ else if(r)o.room=r;
+ return o}
+const lines=e=>{const o=info(e);return [["Phòng",o.room],["Tòa",o.b],["Cơ sở",o.c],["Đơn vị",o.unit]].filter(a=>a[1]).map(a=>a[0]+": "+a[1]).concat((e.x||"").split(" · ").filter(Boolean))};
 document.addEventListener("click",ev=>{const b=ev.target.closest(".ev");if(!b)return;const e=E[+b.dataset.i];
- $("detail").innerHTML=`<h2>${e.t}</h2><p>${NAME[e.w]} · ${hm(e.s)}–${hm(e.e)}</p>${e.r?`<p>Phòng ${e.r}</p>`:""}${e.x?`<p>${e.x}</p>`:""}`});
+ $("detail").innerHTML=`<h2>${e.t}</h2><p>${NAME[e.w]} · ${hm(e.s)}–${hm(e.e)}</p>${lines(e).map(l=>`<p>${esc(l)}</p>`).join("")}`});
 const go=n=>{mon.setDate(mon.getDate()+n);render()};
 $("prev").onclick=()=>go(-7);$("next").onclick=()=>go(7);
 $("today").onclick=()=>{mon=monday(new Date());render()};
@@ -113,6 +125,14 @@ $("jump").onclick=()=>{const cur=iso(new Date(mon.getFullYear(),mon.getMonth(),m
  const n=E.filter(e=>vis(e)&&e.d>cur).sort((a,b)=>a.d<b.d?-1:1)[0];
  if(n){const[y,mo,d]=n.d.split("-");mon=monday(new Date(+y,mo-1,+d));render()}else $("detail").innerHTML='<div class="empty">Không còn buổi nào phía sau.</div>'};
 [["th","h"],["ty","y"]].forEach(([id,k])=>$(id).onclick=()=>{show[k]=!show[k];$(id).setAttribute("aria-pressed",show[k]);render()});
+const tip=document.createElement("div");tip.id="tip";document.body.appendChild(tip);
+function place(x,y){const w=tip.offsetWidth,h=tip.offsetHeight;tip.style.left=Math.max(8,Math.min(x+14,innerWidth-w-8))+"px";tip.style.top=(y+16+h>innerHeight?y-h-12:y+16)+"px"}
+document.addEventListener("mouseover",ev=>{const b=ev.target.closest(".ev");if(!b)return;const e=E[+b.dataset.i];
+ tip.innerHTML="<b>"+esc(e.t)+"</b><span>"+hm(e.s)+"–"+hm(e.e)+" · "+NAME[e.w]+"</span>"+lines(e).map(l=>"<span>"+esc(l)+"</span>").join("");tip.style.display="block";place(ev.clientX,ev.clientY)});
+document.addEventListener("mousemove",ev=>{if(tip.style.display=="block")place(ev.clientX,ev.clientY)});
+document.addEventListener("mouseout",ev=>{if(ev.target.closest(".ev"))tip.style.display="none"});
+$("grp").value=GRP;
+$("grp").onchange=()=>{GRP=$("grp").value;try{localStorage.setItem("grp",GRP)}catch(e){}render()};
 render();
 </script>
 </body>
